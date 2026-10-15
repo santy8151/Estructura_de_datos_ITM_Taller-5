@@ -58,6 +58,9 @@
                     <button class="btn btn-preset" @onclick="LoadNumbersMultiMode">
                         🔢 Números (Modas 3, 6)
                     </button>
+                    <button class="btn btn-preset" @onclick="LoadNumbersTest1023">
+                        🔢 Números 10, 2, 3
+                    </button>
                 </div>
             </div>
         </div>
@@ -254,7 +257,7 @@
 </div>
 
 @code {
-    private readonly DoublyLinkedList<string> _list = new();
+    private readonly DoublyLinkedList<string> _list = new(NaturalStringComparer.Default);
     private string _inputValue = string.Empty;
     private string _statusMessage = string.Empty;
     private string _statusClass = "alert-info";
@@ -489,6 +492,19 @@
         ShowModes();
         SetStatus("Cargado preset de números del PDF: Modas son 3 y 6 (3 ocurrencias c/u).", "alert-success");
         Log("Preset cargado: Números con modas 3, 6");
+    }
+
+    private void LoadNumbersTest1023()
+    {
+        _list.Clear();
+        foreach (var n in new[] { "10", "2", "3" })
+        {
+            _list.Add(n);
+        }
+        _activeModes.Clear();
+        _highlightedValues.Clear();
+        SetStatus("Cargados números 10, 2, 3 -> ordenados numéricamente: [2, 3, 10]", "alert-success");
+        Log("Preset cargado: Números 10, 2, 3 ordenados numéricamente");
     }
 
     private void SetStatus(string message, string cssClass)

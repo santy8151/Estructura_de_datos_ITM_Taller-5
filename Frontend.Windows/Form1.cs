@@ -7,7 +7,7 @@ namespace Frontend.Windows;
 
 public partial class Form1 : Form
 {
-    private readonly DoublyLinkedList<string> _list = new();
+    private readonly DoublyLinkedList<string> _list = new(NaturalStringComparer.Default);
 
     public Form1()
     {

@@ -14,8 +14,9 @@ public static class Program
 
     private static void RunMenu()
     {
-        // Using string type to allow both words and numeric input
-        var list = new DoublyLinkedList<string>();
+        // Using NaturalStringComparer so numeric strings ("10", "2", "3") sort numerically as [2, 3, 10]
+        // while text strings ("Blanco", "Azul") sort lexicographically as [Azul, Blanco].
+        var list = new DoublyLinkedList<string>(NaturalStringComparer.Default);
 
         bool running = true;
         while (running)
@@ -30,10 +31,10 @@ public static class Program
             System.Console.WriteLine("7. Existe.");
             System.Console.WriteLine("8. Eliminar una ocurrencia.");
             System.Console.WriteLine("9. Eliminar todas las ocurrencias.");
-            System.Console.WriteLine("P. Cargar preset de prueba (Colores o Números del enunciado).");
+            System.Console.WriteLine("P. Cargar preset de prueba (Colores, Números PDF o Prueba 10/2/3).");
             System.Console.WriteLine("C. Limpiar lista.");
             System.Console.WriteLine("0. Salir.");
-            System.Console.WriteLine(new string('-', 46));
+            System.Console.WriteLine(new string('-', 50));
             System.Console.Write("Seleccione una opción: ");
 
             var option = System.Console.ReadLine()?.Trim().ToUpperInvariant();
@@ -108,10 +109,11 @@ public static class Program
 
     private static void PrintHeader()
     {
-        System.Console.WriteLine("==============================================");
-        System.Console.WriteLine("         Taller #5 - Listas Ligadas           ");
-        System.Console.WriteLine("     Estructura de Datos - ITM Medellín       ");
-        System.Console.WriteLine("==============================================");
+        System.Console.WriteLine("==================================================");
+        System.Console.WriteLine("          Taller #5 - Listas Ligadas              ");
+        System.Console.WriteLine("      Estructura de Datos - ITM Medellín          ");
+        System.Console.WriteLine(" (Ordenamiento natural: Números y Palabras OK)    ");
+        System.Console.WriteLine("==================================================");
     }
 
     private static void AddElement(DoublyLinkedList<string> list)
@@ -164,7 +166,7 @@ public static class Program
         }
 
         list.SortDescending();
-        System.Console.WriteLine("La lista ha sido ordenada descendentemente.");
+        System.Console.WriteLine("La lista ha sido ordenada descendentemente (operación idempotente).");
         System.Console.WriteLine($"Resultado: {string.Join(", ", list.ToForwardList())}");
     }
 
@@ -269,6 +271,7 @@ public static class Program
         System.Console.WriteLine("1. Colores del PDF: Blanco, Azul, Amarillo, Verde, Negro");
         System.Console.WriteLine("2. Números del PDF (Moda única): 1, 2, 3, 3, 2, 5, 6, 6, 6, 3, 6");
         System.Console.WriteLine("3. Números del PDF (Multimodal): 1, 2, 3, 3, 2, 5, 6, 6, 6, 3");
+        System.Console.WriteLine("4. Prueba Números 10, 2, 3 (Verifica orden numérico: 2, 3, 10)");
         System.Console.Write("Opción: ");
         var choice = System.Console.ReadLine()?.Trim();
 
@@ -297,6 +300,14 @@ public static class Program
                     list.Add(item);
                 }
                 System.Console.WriteLine("Cargada secuencia con modas 3, 6.");
+                break;
+
+            case "4":
+                foreach (var item in new[] { "10", "2", "3" })
+                {
+                    list.Add(item);
+                }
+                System.Console.WriteLine("Cargados números 10, 2, 3 ordenados numéricamente.");
                 break;
 
             default:

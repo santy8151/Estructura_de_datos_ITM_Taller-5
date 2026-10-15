@@ -13,6 +13,8 @@ namespace Backend;
 /// <typeparam name="T">The type of elements in the list, constrained to <see cref="IComparable{T}"/>.</typeparam>
 public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
 {
+    private readonly IComparer<T> _comparer;
+
     /// <summary>
     /// Gets the first node of the list.
     /// </summary>
@@ -39,6 +41,15 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
     public bool IsEmpty => Head == null;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="DoublyLinkedList{T}"/> class.
+    /// </summary>
+    /// <param name="comparer">An optional custom comparer. If null, <see cref="Comparer{T}.Default"/> is used.</param>
+    public DoublyLinkedList(IComparer<T>? comparer = null)
+    {
+        _comparer = comparer ?? Comparer<T>.Default;
+    }
+
+    /// <summary>
     /// Inserts an item into the list maintaining sorted order.
     /// If the list is in ascending mode (default), items are placed in ascending order.
     /// If the list is in descending mode, items are placed in descending order.
@@ -61,7 +72,7 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
         {
             // Ascending insertion: find the first node strictly greater than the new value
             var current = Head;
-            while (current != null && current.Value.CompareTo(value) <= 0)
+            while (current != null && _comparer.Compare(current.Value, value) <= 0)
             {
                 current = current.Next;
             }
@@ -93,7 +104,7 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
         {
             // Descending insertion: find the first node strictly less than the new value
             var current = Head;
-            while (current != null && current.Value.CompareTo(value) >= 0)
+            while (current != null && _comparer.Compare(current.Value, value) >= 0)
             {
                 current = current.Next;
             }
@@ -160,9 +171,16 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
     /// <summary>
     /// Changes the internal links of the list to reverse its current order,
     /// sorting it in descending order if it was previously ascending.
+    /// This method is idempotent: calling it multiple times leaves the list in descending order.
     /// </summary>
     public void SortDescending()
     {
+        // Prevent reversing multiple times if already descending
+        if (IsDescending)
+        {
+            return;
+        }
+
         if (Head == null || Head.Next == null)
         {
             IsDescending = true;
@@ -188,9 +206,11 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
 
     /// <summary>
     /// Restores the internal links of the list to ascending order if it was sorted descending.
+    /// This method is idempotent: calling it multiple times leaves the list in ascending order.
     /// </summary>
     public void SortAscending()
     {
+        // Prevent reversing multiple times if already ascending
         if (!IsDescending)
         {
             return;
@@ -265,7 +285,7 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
         }
 
         // Sort modes to provide consistent deterministic display
-        modes.Sort();
+        modes.Sort(_comparer);
 
         return (modes, maxFreq);
     }
@@ -345,7 +365,7 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
         var current = Head;
         while (current != null)
         {
-            if (current.Value.CompareTo(value) == 0)
+            if (_comparer.Compare(current.Value, value) == 0)
             {
                 return true;
             }
@@ -365,7 +385,7 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
         var current = Head;
         while (current != null)
         {
-            if (current.Value.CompareTo(value) == 0)
+            if (_comparer.Compare(current.Value, value) == 0)
             {
                 UnlinkNode(current);
                 return true;
@@ -388,7 +408,7 @@ public class DoublyLinkedList<T> : IEnumerable<T> where T : IComparable<T>
         while (current != null)
         {
             var next = current.Next;
-            if (current.Value.CompareTo(value) == 0)
+            if (_comparer.Compare(current.Value, value) == 0)
             {
                 UnlinkNode(current);
                 removedCount++;

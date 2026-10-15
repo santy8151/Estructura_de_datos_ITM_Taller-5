@@ -26,6 +26,38 @@ public class DoublyLinkedListTests
     }
 
     [Fact]
+    public void Add_NumericGenerics_Orders10And2And3Numerically()
+    {
+        // Arrange: testing generic DoublyLinkedList<int> with 10, 2, 3
+        var list = new DoublyLinkedList<int>();
+
+        // Act
+        list.Add(10);
+        list.Add(2);
+        list.Add(3);
+
+        // Assert: must be [2, 3, 10] NOT lexicographical [10, 2, 3]
+        var expected = new List<int> { 2, 3, 10 };
+        Assert.Equal(expected, list.ToForwardList());
+    }
+
+    [Fact]
+    public void Add_NaturalStringComparer_OrdersStringNumbersNumerically()
+    {
+        // Arrange: testing string list with NaturalStringComparer
+        var list = new DoublyLinkedList<string>(NaturalStringComparer.Default);
+
+        // Act
+        list.Add("10");
+        list.Add("2");
+        list.Add("3");
+
+        // Assert: numeric strings are sorted naturally as 2, 3, 10
+        var expected = new List<string> { "2", "3", "10" };
+        Assert.Equal(expected, list.ToForwardList());
+    }
+
+    [Fact]
     public void Traversal_ForwardAndBackward_MatchExpectedSequences()
     {
         // Arrange
@@ -65,6 +97,51 @@ public class DoublyLinkedListTests
         Assert.True(list.IsDescending);
         Assert.Equal("Verde", list.Head?.Value);
         Assert.Equal("Amarillo", list.Tail?.Value);
+    }
+
+    [Fact]
+    public void SortDescending_CalledMultipleTimes_RemainsDescending()
+    {
+        // Arrange
+        var list = new DoublyLinkedList<string>();
+        list.Add("Blanco");
+        list.Add("Azul");
+        list.Add("Amarillo");
+        list.Add("Verde");
+        list.Add("Negro");
+
+        // Act - call SortDescending three times consecutively
+        list.SortDescending();
+        list.SortDescending();
+        list.SortDescending();
+
+        // Assert - must still be descending, not flipped back to ascending
+        var expected = new List<string> { "Verde", "Negro", "Blanco", "Azul", "Amarillo" };
+        Assert.Equal(expected, list.ToForwardList());
+        Assert.True(list.IsDescending);
+    }
+
+    [Fact]
+    public void SortAscending_CalledMultipleTimes_RemainsAscending()
+    {
+        // Arrange
+        var list = new DoublyLinkedList<string>();
+        list.Add("Blanco");
+        list.Add("Azul");
+        list.Add("Amarillo");
+        list.Add("Verde");
+        list.Add("Negro");
+
+        list.SortDescending();
+
+        // Act - call SortAscending multiple times
+        list.SortAscending();
+        list.SortAscending();
+
+        // Assert - must remain ascending
+        var expected = new List<string> { "Amarillo", "Azul", "Blanco", "Negro", "Verde" };
+        Assert.Equal(expected, list.ToForwardList());
+        Assert.False(list.IsDescending);
     }
 
     [Fact]
