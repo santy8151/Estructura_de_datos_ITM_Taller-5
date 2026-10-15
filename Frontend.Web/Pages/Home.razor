@@ -1,0 +1,508 @@
+@page "/"
+@using Backend
+@inject IJSRuntime JS
+
+<PageTitle>Taller #5 — Listas Ligadas | ITM</PageTitle>
+
+<div class="visualizer-container">
+    <!-- Top Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <span class="stat-label">Total Nodos</span>
+            <span class="stat-value">@_list.Count</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Orden Interno</span>
+            <span class="stat-value @(_list.IsDescending ? "tag-desc" : "tag-asc")">
+                @(_list.IsDescending ? "Descendente" : "Ascendente")
+            </span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Cabeza (Head)</span>
+            <span class="stat-value text-accent">@(_list.Head != null ? _list.Head.Value : "null")</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Cola (Tail)</span>
+            <span class="stat-value text-accent">@(_list.Tail != null ? _list.Tail.Value : "null")</span>
+        </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="card panel-controls">
+        <div class="input-actions-bar">
+            <div class="input-field-group">
+                <label for="nodeInput">Elemento a gestionar:</label>
+                <div class="input-with-button">
+                    <input id="nodeInput"
+                           type="text"
+                           class="form-control"
+                           placeholder="Ej. Blanco, 3, etc."
+                           @bind="_inputValue"
+                           @bind:event="oninput"
+                           @onkeydown="HandleKeyDown" />
+                    <button class="btn btn-primary" @onclick="AddElement">
+                        <span>➕</span> 1. Adicionar
+                    </button>
+                </div>
+            </div>
+
+            <div class="presets-group">
+                <span class="presets-label">Presets del Enunciado:</span>
+                <div class="preset-buttons">
+                    <button class="btn btn-preset" @onclick="LoadColorsPreset">
+                        🎨 Colores PDF
+                    </button>
+                    <button class="btn btn-preset" @onclick="LoadNumbersSingleMode">
+                        🔢 Números (Moda 6)
+                    </button>
+                    <button class="btn btn-preset" @onclick="LoadNumbersMultiMode">
+                        🔢 Números (Modas 3, 6)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="operations-grid">
+            <button class="btn btn-action" @onclick="ShowForward">
+                ➡️ 2. Mostrar hacia adelante
+            </button>
+            <button class="btn btn-action" @onclick="ShowBackward">
+                ⬅️ 3. Mostrar hacia atrás
+            </button>
+            <button class="btn btn-action btn-highlight" @onclick="SortDescending">
+                🔄 4. Ordenar descendentemente
+            </button>
+            <button class="btn btn-action" @onclick="ShowModes">
+                🎯 5. Mostrar la(s) moda(s)
+            </button>
+            <button class="btn btn-action" @onclick="ShowChart">
+                📊 6. Mostrar gráfico
+            </button>
+            <button class="btn btn-action" @onclick="CheckExists">
+                🔍 7. Existe
+            </button>
+            <button class="btn btn-action btn-warn" @onclick="RemoveOne">
+                🗑️ 8. Eliminar 1 ocurrencia
+            </button>
+            <button class="btn btn-action btn-danger" @onclick="RemoveAll">
+                💥 9. Eliminar todas
+            </button>
+            <button class="btn btn-action btn-clear" @onclick="ClearList">
+                🧹 Limpiar Lista
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert / Message Banner -->
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="alert-banner @_statusClass">
+            <span>@_statusMessage</span>
+            <button type="button" class="btn-close" @onclick="() => _statusMessage = string.Empty">✕</button>
+        </div>
+    }
+
+    <!-- Visual Doubly Linked List Canvas -->
+    <div class="card panel-canvas">
+        <div class="canvas-header">
+            <h3>Visualización de la Lista Doblemente Ligada</h3>
+            <span class="canvas-hint">Punteros <code>Previous &lt;-</code> y <code>-&gt; Next</code> enlazados dinámicamente</span>
+        </div>
+
+        @if (_list.IsEmpty)
+        {
+            <div class="empty-list-state">
+                <span class="empty-icon">⛓️</span>
+                <p>La lista está vacía actualmente.</p>
+                <small>Ingrese un elemento arriba o cargue uno de los presets del PDF para comenzar.</small>
+            </div>
+        }
+        else
+        {
+            <div class="nodes-scroller">
+                <div class="nodes-chain">
+                    <div class="sentinel-box">NULL</div>
+                    <div class="arrow-bi">⇄</div>
+
+                    @{
+                        var current = _list.Head;
+                        int index = 0;
+                        while (current != null)
+                        {
+                            var nodeVal = current.Value;
+                            var isHead = current == _list.Head;
+                            var isTail = current == _list.Tail;
+                            var isHighlighted = _highlightedValues.Contains(nodeVal);
+                            var prevVal = current.Previous != null ? current.Previous.Value : "null";
+                            var nextVal = current.Next != null ? current.Next.Value : "null";
+
+                            <div class="node-wrapper @(isHighlighted ? "highlight-glow" : "")">
+                                <div class="node-tags">
+                                    @if (isHead) { <span class="tag tag-head">HEAD</span> }
+                                    @if (isTail) { <span class="tag tag-tail">TAIL</span> }
+                                </div>
+                                <div class="node-box">
+                                    <div class="node-pointer prev-ptr" title="Previous: @prevVal">
+                                        ⮜
+                                    </div>
+                                    <div class="node-value" title="Valor: @nodeVal | Índice: @index">
+                                        @nodeVal
+                                    </div>
+                                    <div class="node-pointer next-ptr" title="Next: @nextVal">
+                                        ⮞
+                                    </div>
+                                </div>
+                                <div class="node-index">#@index</div>
+                            </div>
+
+                            if (current.Next != null)
+                            {
+                                <div class="arrow-bi">⇄</div>
+                            }
+
+                            current = current.Next;
+                            index++;
+                        }
+                    }
+
+                    <div class="arrow-bi">⇄</div>
+                    <div class="sentinel-box">NULL</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Output and Chart Columns -->
+    <div class="details-grid">
+        <!-- Asterisk and Visual Chart -->
+        <div class="card chart-panel">
+            <h3>📊 6. Gráfico de Ocurrencias (Enunciado)</h3>
+            @if (_list.IsEmpty)
+            {
+                <p class="text-muted">Agregue elementos para ver la gráfica de asteriscos.</p>
+            }
+            else
+            {
+                <div class="chart-content">
+                    <div class="ascii-chart-box">
+                        <span class="box-subtitle">Salida en Texto (Exacto al PDF):</span>
+                        <pre class="ascii-pre">@_list.GetAsteriskChart()</pre>
+                    </div>
+
+                    <div class="visual-bars-box">
+                        <span class="box-subtitle">Gráfico Visual de Barras:</span>
+                        @{
+                            var freqs = _list.GetFrequencies();
+                            int maxVal = freqs.Count > 0 ? freqs.Max(f => f.Count) : 1;
+                        }
+                        @foreach (var item in freqs)
+                        {
+                            var pct = (int)((double)item.Count / maxVal * 100);
+                            <div class="bar-row">
+                                <span class="bar-key">@item.Value</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: @(Math.Max(pct, 12))%">
+                                        @item.Count
+                                    </div>
+                                </div>
+                                <span class="bar-stars">@(new string('*', item.Count))</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Traversal & Modes Information Panel -->
+        <div class="card log-panel">
+            <h3>📋 Resultados de Operaciones & Modas</h3>
+            @if (_activeModes.Count > 0)
+            {
+                <div class="modes-card">
+                    <span class="modes-header">🎯 Moda(s) Calculada(s):</span>
+                    <div class="modes-badges">
+                        @foreach (var m in _activeModes)
+                        {
+                            <span class="mode-badge">@m</span>
+                        }
+                    </div>
+                    <small>Frecuencia máxima: @_maxModeFrequency ocurrencias</small>
+                </div>
+            }
+
+            <div class="terminal-log">
+                <span class="box-subtitle">Historial de Ejecución:</span>
+                <div class="log-entries">
+                    @if (_logEntries.Count == 0)
+                    {
+                        <div class="log-empty">No hay operaciones registradas aún.</div>
+                    }
+                    else
+                    {
+                        @foreach (var entry in _logEntries)
+                        {
+                            <div class="log-line">
+                                <span class="log-time">@entry.Time</span>
+                                <span class="log-text">@entry.Text</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly DoublyLinkedList<string> _list = new();
+    private string _inputValue = string.Empty;
+    private string _statusMessage = string.Empty;
+    private string _statusClass = "alert-info";
+    private readonly HashSet<string> _highlightedValues = new();
+    private List<string> _activeModes = new();
+    private int _maxModeFrequency = 0;
+
+    private record LogEntry(string Time, string Text);
+    private readonly List<LogEntry> _logEntries = new();
+
+    protected override void OnInitialized()
+    {
+        // Load default preset from PDF on start for immediate visualization
+        LoadColorsPreset();
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddElement();
+        }
+    }
+
+    private void AddElement()
+    {
+        var val = _inputValue?.Trim();
+        if (string.IsNullOrWhiteSpace(val))
+        {
+            SetStatus("Por favor ingrese un valor en el campo de texto.", "alert-warn");
+            return;
+        }
+
+        _list.Add(val);
+        _inputValue = string.Empty;
+        _activeModes.Clear();
+        _highlightedValues.Clear();
+        _highlightedValues.Add(val);
+
+        SetStatus($"Elemento '{val}' adicionado en orden {(_list.IsDescending ? "descendente" : "ascendente")}.", "alert-success");
+        Log($"Adicionar: '{val}'. Lista: [{string.Join(", ", _list.ToForwardList())}]");
+    }
+
+    private void ShowForward()
+    {
+        if (_list.IsEmpty)
+        {
+            SetStatus("La lista está vacía.", "alert-warn");
+            return;
+        }
+        var forward = _list.ToForwardList();
+        SetStatus($"Recorrido hacia adelante: {string.Join(" -> ", forward)}", "alert-info");
+        Log($"2. Mostrar hacia adelante: {string.Join(", ", forward)}");
+    }
+
+    private void ShowBackward()
+    {
+        if (_list.IsEmpty)
+        {
+            SetStatus("La lista está vacía.", "alert-warn");
+            return;
+        }
+        var backward = _list.ToBackwardList();
+        SetStatus($"Recorrido hacia atrás: {string.Join(" <- ", backward)}", "alert-info");
+        Log($"3. Mostrar hacia atrás: {string.Join(", ", backward)}");
+    }
+
+    private void SortDescending()
+    {
+        if (_list.IsEmpty)
+        {
+            SetStatus("La lista está vacía.", "alert-warn");
+            return;
+        }
+
+        _list.SortDescending();
+        var forward = _list.ToForwardList();
+        SetStatus($"Lista ordenada descendentemente: {string.Join(" -> ", forward)}", "alert-success");
+        Log($"4. Ordenar descendentemente: {string.Join(", ", forward)}");
+    }
+
+    private void ShowModes()
+    {
+        if (_list.IsEmpty)
+        {
+            SetStatus("La lista está vacía. No hay moda.", "alert-warn");
+            return;
+        }
+
+        var (modes, maxFreq) = _list.GetModes();
+        _activeModes = modes;
+        _maxModeFrequency = maxFreq;
+        _highlightedValues.Clear();
+        foreach (var m in modes) _highlightedValues.Add(m);
+
+        if (modes.Count == 1)
+        {
+            SetStatus($"La moda es: '{modes[0]}' con {maxFreq} ocurrencia(s).", "alert-success");
+            Log($"5. Moda única: {modes[0]} ({maxFreq} veces)");
+        }
+        else
+        {
+            SetStatus($"Las modas son: {string.Join(", ", modes)} con {maxFreq} ocurrencia(s) c/u.", "alert-success");
+            Log($"5. Modas múltiples: {string.Join(", ", modes)} ({maxFreq} veces c/u)");
+        }
+    }
+
+    private void ShowChart()
+    {
+        if (_list.IsEmpty)
+        {
+            SetStatus("La lista está vacía.", "alert-warn");
+            return;
+        }
+        SetStatus("Gráfico de ocurrencias actualizado abajo en pantalla.", "alert-info");
+        Log("6. Mostrar gráfico generado.");
+    }
+
+    private void CheckExists()
+    {
+        var val = _inputValue?.Trim();
+        if (string.IsNullOrWhiteSpace(val))
+        {
+            SetStatus("Escriba el elemento a consultar en el campo de texto.", "alert-warn");
+            return;
+        }
+
+        bool exists = _list.Exists(val);
+        _highlightedValues.Clear();
+        if (exists)
+        {
+            _highlightedValues.Add(val);
+            SetStatus($"El elemento '{val}' existe en la lista.", "alert-success");
+            Log($"7. Existe: '{val}' -> SÍ");
+        }
+        else
+        {
+            SetStatus($"No existe el {val}.", "alert-danger");
+            Log($"7. Existe: '{val}' -> NO");
+        }
+    }
+
+    private void RemoveOne()
+    {
+        var val = _inputValue?.Trim();
+        if (string.IsNullOrWhiteSpace(val))
+        {
+            SetStatus("Escriba el elemento a eliminar en el campo de texto.", "alert-warn");
+            return;
+        }
+
+        bool removed = _list.RemoveOne(val);
+        _activeModes.Clear();
+        _highlightedValues.Clear();
+        if (removed)
+        {
+            SetStatus($"Se eliminó la primera ocurrencia de '{val}'.", "alert-success");
+            Log($"8. Eliminar una ocurrencia: '{val}'");
+        }
+        else
+        {
+            SetStatus($"No se encontró '{val}' en la lista.", "alert-warn");
+            Log($"8. Eliminar una ocurrencia: '{val}' no encontrado");
+        }
+    }
+
+    private void RemoveAll()
+    {
+        var val = _inputValue?.Trim();
+        if (string.IsNullOrWhiteSpace(val))
+        {
+            SetStatus("Escriba el elemento a eliminar en el campo de texto.", "alert-warn");
+            return;
+        }
+
+        int count = _list.RemoveAll(val);
+        _activeModes.Clear();
+        _highlightedValues.Clear();
+        if (count > 0)
+        {
+            SetStatus($"Se eliminaron {count} ocurrencia(s) de '{val}'.", "alert-success");
+            Log($"9. Eliminar todas las ocurrencias: '{val}' ({count} eliminadas)");
+        }
+        else
+        {
+            SetStatus($"No se encontró '{val}' en la lista.", "alert-warn");
+            Log($"9. Eliminar todas las ocurrencias: '{val}' no encontrado");
+        }
+    }
+
+    private void ClearList()
+    {
+        _list.Clear();
+        _activeModes.Clear();
+        _highlightedValues.Clear();
+        SetStatus("Lista vaciada exitosamente.", "alert-info");
+        Log("Limpiar lista: vacía");
+    }
+
+    private void LoadColorsPreset()
+    {
+        _list.Clear();
+        foreach (var c in new[] { "Blanco", "Azul", "Amarillo", "Verde", "Negro" })
+        {
+            _list.Add(c);
+        }
+        _activeModes.Clear();
+        _highlightedValues.Clear();
+        SetStatus("Cargado preset de colores del PDF: Amarillo, Azul, Blanco, Negro, Verde", "alert-success");
+        Log("Preset cargado: Colores del PDF");
+    }
+
+    private void LoadNumbersSingleMode()
+    {
+        _list.Clear();
+        foreach (var n in new[] { "1", "2", "3", "3", "2", "5", "6", "6", "6", "3", "6" })
+        {
+            _list.Add(n);
+        }
+        ShowModes();
+        SetStatus("Cargado preset de números del PDF: Moda única es 6 (4 ocurrencias).", "alert-success");
+        Log("Preset cargado: Números con moda única 6");
+    }
+
+    private void LoadNumbersMultiMode()
+    {
+        _list.Clear();
+        foreach (var n in new[] { "1", "2", "3", "3", "2", "5", "6", "6", "6", "3" })
+        {
+            _list.Add(n);
+        }
+        ShowModes();
+        SetStatus("Cargado preset de números del PDF: Modas son 3 y 6 (3 ocurrencias c/u).", "alert-success");
+        Log("Preset cargado: Números con modas 3, 6");
+    }
+
+    private void SetStatus(string message, string cssClass)
+    {
+        _statusMessage = message;
+        _statusClass = cssClass;
+    }
+
+    private void Log(string message)
+    {
+        _logEntries.Insert(0, new LogEntry(DateTime.Now.ToString("HH:mm:ss"), message));
+        if (_logEntries.Count > 40)
+        {
+            _logEntries.RemoveAt(_logEntries.Count - 1);
+        }
+    }
+}
