@@ -1,0 +1,51 @@
+name: Deploy Blazor to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Run Tests
+        run: dotnet test Backend.Tests/Backend.Tests.csproj -c Release
+
+      - name: Publish Blazor WebAssembly
+        run: dotnet publish Frontend.Web/Frontend.Web.csproj -c Release -o release --nologo
+
+      - name: Configure base href for GitHub Pages & copy 404
+        run: |
+          sed -i 's/<base href="\/" \/>/<base href="\/Estructura_de_datos_ITM_Taller-5\/" \/>/g' release/wwwroot/index.html
+          cp release/wwwroot/index.html release/wwwroot/404.html
+          touch release/wwwroot/.nojekyll
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: release/wwwroot
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
