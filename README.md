@@ -98,27 +98,4 @@ To deploy via Vercel:
 
 ---
 
-## 📹 Video Presentation Script (Strictly Under 5 Minutes)
-
-> **Time limit guideline:** The professor penalizes videos over 5 minutes. Follow this 3.5-minute script:
-
-1. **Introduction (0:00 - 0:30):**
-   - State your name (*Santiago Suarez*), university (*ITM*), and subject (*Estructura de Datos - Taller #5: Listas Ligadas*).
-   - Show the clean solution structure (`Backend`, `Frontend.Console`, `Frontend.Web`, `Frontend.Windows`).
-2. **Backend & Logic (0:30 - 1:15):**
-   - Show `DoubleNode<T>` with `Value`, `Next`, and `Previous`.
-   - Show `DoublyLinkedList<T>` with ascending insertion `Add(T value)`, in-place reversal `SortDescending()`, `GetModes()`, `Exists()`, `RemoveOne()`, and `RemoveAll()`.
-   - Run `dotnet test` to show all 9 unit tests passing green.
-3. **Console Demonstration (1:15 - 2:15):**
-   - Run `dotnet run --project Frontend.Console`.
-   - Press `P` -> `1` to load colors (`Blanco, Azul, Amarillo, Verde, Negro`).
-   - Run option `2` (Forward) and `3` (Backward).
-   - Run option `4` (Sort Descending) -> show `Verde, Negro, Blanco, Azul, Amarillo`.
-   - Press `P` -> `2` to load numbers (`1, 2, 3, 3, 2, 5, 6, 6, 6, 3, 6`) and run option `5` (Moda -> `6`).
-   - Run option `6` (Gráfico -> show asterisk chart).
-   - Run option `7` (Existe -> 3 exists, 8 does not).
-   - Run option `8` (Remove one) and option `9` (Remove all).
-4. **GUI / Web Demonstration (2:15 - 3:15):**
-   - Open the Blazor WebAssembly app (or WinForms) showing interactive nodes, arrows, and responsive chart.
-5. **Conclusion & GitHub Link (3:15 - 3:30):**
    - Show the GitHub repository with clean commits and README.
